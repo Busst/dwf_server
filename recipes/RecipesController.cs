@@ -4,25 +4,24 @@ using Serilog;
 using server.exceptions;
 using System.Collections.Specialized;
 using server.repository;
-
 using server.Resources;
 
-namespace server.user
+namespace server.recipes
 {
-    public class UserController : HttpHandler, IRequestHandler
+    public class RecipesController : HttpHandler, IRequestHandler
     {
         // private st/ring reponse;
         private ILogger log;
         private UnitOfWork unitOfWork;
-        public UserController(ILogger log) {
+        public RecipesController(ILogger log) {
             this.log = log;
-            this.log.ForContext<UserController>();
+            this.log.ForContext<RecipesController>();
             this.log.Information("Creating a new user repo");
-            unitOfWork = new UnitOfWork(this.log, new FOSContext());
+            unitOfWork = new UnitOfWork(this.log,  new FOSContext());
         }
-        public UserController(ILogger log, FOSContext dbContext) {
+        public RecipesController(ILogger log, FOSContext dbContext) {
             this.log = log;
-            this.log.ForContext<UserController>();
+            this.log.ForContext<RecipesController>();
             unitOfWork = new UnitOfWork(this.log, dbContext);
             
         }
@@ -38,12 +37,13 @@ namespace server.user
             }
             switch (nextPath.ToLower()) {
                 // case("getall"):
-                //     response = Parsing.ParseList(unitOfWork.UserRepository.GetAll());
+                //     response = Parsing.ParseList(recipeRepository.GetRecipes());
                 //     break;
                 case("getbyid"):
-                if (queries["id"] == null) throw new Exception("404");
-                    response = Parsing.ParseObject(unitOfWork.UserRepository.GetByID(Int32.Parse(queries["id"])));
-                    break;
+                    if (queries["id"] == null) throw new Exception("404");
+                        response = Parsing.ParseObject(unitOfWork.RecipeRepository.GetByID(Int32.Parse(queries["id"])));
+                        break;
+                
                 default:
                     throw new NotFoundException("File Path Not Found: Second link");
             }
@@ -55,16 +55,16 @@ namespace server.user
 
         }
         public override void HandleDelete(string[] segments, NameValueCollection queries, string hash){
-            
             string nextPath = "";
             if (segments.Length > 2) {
                 nextPath = segments[2];
             }
             switch (nextPath.ToLower()) {
                 case("deletebyid"):
-                if (queries["id"] == null) throw new Exception("404");
-                    unitOfWork.UserRepository.Delete(Int32.Parse(queries["id"]));
-                    break;
+                    if (queries["id"] == null) throw new Exception("404");
+                        unitOfWork.RecipeRepository.Delete(Int32.Parse(queries["id"]));
+                        break;
+
                 default:
                     throw new NotFoundException("File Path Not Found: Second link");
             }

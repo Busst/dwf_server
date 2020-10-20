@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
 using Serilog;
+using Newtonsoft.Json; 
 using server.user;
-
+using server.repository;
+using server.exceptions;
+using server.recipes;
+using server.LogEnrichers;
 
 namespace server
 {
@@ -13,21 +17,20 @@ namespace server
         static void Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console()
+                .Enrich.WithCaller()
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message}                               (at {Caller}){NewLine}{Exception}")
                 .CreateLogger();
             Log.Logger.ForContext<Program>();
             Log.Information("Logger initialized");
-            
-            UserRepository userRepository = new UserRepository(Log.Logger, new UserContext());
-            
-            Log.Information($"{userRepository.GetUsers()}");
+            FOSContext dbContext = new FOSContext();
             SimpleServerListener(new string[]{
-                "http://localhost:7321/"
-            });
+                "http://localhost:7321/",
+                },
+                dbContext);
         }
 
         // This example requires the System and System.Net namespaces.
-        public static void SimpleServerListener(string[] prefixes)
+        public static void SimpleServerListener(string[] prefixes, FOSContext dbContext)
         {
             if (!HttpListener.IsSupported)
             {
@@ -52,8 +55,17 @@ namespace server
             // Note: The GetContext method blocks while waiting for a request.
             HttpListenerContext context = listener.GetContext();
             HttpListenerRequest request = context.Request;
-            
-            string res = HandleRequest(request);
+            string res = null;
+            try {
+                res = HandleRequest(request, dbContext);
+            } catch (NotFoundException e) {
+                res = e.Message;
+            } catch (FormatException e) {
+                res = e.Message;
+            } catch (Exception e) {
+                res = "Generic Exception caught: " + e.Message;
+                Log.Error(e.StackTrace);
+            }
             // Obtain a response object.
             HttpListenerResponse response = context.Response;
             // Construct a response.
@@ -68,21 +80,36 @@ namespace server
             listener.Stop();
         }
 
-        public static string HandleRequest(HttpListenerRequest req){
-            string[] path = req.RawUrl.Split("/");
+        public static string HandleRequest(HttpListenerRequest req, FOSContext dbContext){
+            string[] tempPath = req.RawUrl.Split("/");
+            List<String> realPath = new List<string>();
+            string s = null;
+            if (tempPath.Length > 1) s = tempPath[1];
+            if (tempPath.Length > 2) {
+                for (int i = 0; i < tempPath.Length-2; i++){
+                    realPath.Add(tempPath[i+2]);
+                }
+            }
+
             IRequestHandler controller = null;
-            switch (path[1]){
+            Log.Information("Switch: " + s);
+            switch (s){
                 case "test":
                     System.Console.WriteLine("test path");
                     break;
                 case "user":
-                    controller = new UserController(Log.Logger);
+                    controller = new UserController(Log.Logger, dbContext);
+                    break;
+                case "drinks":
+                    controller = new RecipesController(Log.Logger, dbContext);
+                    break;
+                case "cooking":
                     break;
                 default:
                     break;
             } 
             if (controller == null) {
-                throw new Exception("Invalid file path: 404");
+                throw new NotFoundException("404: File Path Not Found - First link");
             }
             string res = controller.HandleRequest(req);
             return $"<br/>{res}<br/>";
