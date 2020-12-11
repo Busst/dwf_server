@@ -3,16 +3,18 @@ using server.recipes;
 using server.recipes.ingredients;
 using server.user;
 using Serilog;
+using server.models;
+
 namespace server.repository
 {
     public class UnitOfWork : IDisposable
     {
-        private FOSContext context;
+        private dwfContext context;
         private UserRepository userRepository;
         private RecipeRepository recipeRepository;
         private IngredientRepository ingredientRepository;
         private ILogger log;
-        public UnitOfWork(ILogger logger, FOSContext context){
+        public UnitOfWork(ILogger logger, dwfContext context){
             this.context = context;
             log = logger;
             log.ForContext<UnitOfWork>();
@@ -24,7 +26,7 @@ namespace server.repository
 
                 if (this.userRepository == null)
                 {
-                    this.userRepository = new UserRepository(context);
+                    this.userRepository = new UserRepository(context, log);
                 }
                 return userRepository;
             }
@@ -37,7 +39,7 @@ namespace server.repository
 
                 if (this.recipeRepository == null)
                 {
-                    this.recipeRepository = new RecipeRepository(context);
+                    this.recipeRepository = new RecipeRepository(context, log);
                 }
                 return recipeRepository;
             }
@@ -49,11 +51,13 @@ namespace server.repository
 
                 if (this.ingredientRepository == null)
                 {
-                    this.ingredientRepository = new IngredientRepository(context);
+                    this.ingredientRepository = new IngredientRepository(context, log);
+                    
                 }
                 return ingredientRepository;
             }
         }
+        
 
         public void Save()
         {

@@ -5,6 +5,7 @@ using server.exceptions;
 using System.Collections.Specialized;
 using server.repository;
 using server.Resources;
+using server.models;
 
 namespace server.recipes.ingredients
 {
@@ -12,13 +13,13 @@ namespace server.recipes.ingredients
     {
         private ILogger log;
         private UnitOfWork unitOfWork;
-        public IngredientController(ILogger log) {
+        public IngredientController(ILogger log, ServerConfig serverConfig) {
             this.log = log;
             this.log.ForContext<IngredientController>();
             this.log.Information("Creating a new user repo");
-            unitOfWork = new UnitOfWork(this.log, new FOSContext());
+            unitOfWork = new UnitOfWork(this.log, new dwfContext(serverConfig));
         }
-        public IngredientController(ILogger log, FOSContext dbContext) {
+        public IngredientController(ILogger log, dwfContext dbContext) {
             this.log = log;
             this.log.ForContext<IngredientController>();
             unitOfWork = new UnitOfWork(this.log, dbContext);

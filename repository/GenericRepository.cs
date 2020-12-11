@@ -1,17 +1,19 @@
-using System.Data.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Serilog;
+using server.models;
+using Microsoft.EntityFrameworkCore;
+
 namespace server.repository
 {
     public class GenericRepository<TEntity> where TEntity : class
     {
-        internal FOSContext context;
+        internal dwfContext context;
         internal DbSet<TEntity> dbSet;
 
-        public GenericRepository(FOSContext context)
+        public GenericRepository(dwfContext context)
         {
             this.context = context;
             this.dbSet = context.Set<TEntity>();
@@ -75,9 +77,9 @@ namespace server.repository
             dbSet.Attach(entityToUpdate);
             context.Entry(entityToUpdate).State = EntityState.Modified;
         }
-        public virtual IEnumerable<TEntity> GetWithRawSql(string query, params object[] parameters)
-        {
-            return dbSet.SqlQuery(query, parameters).ToList();
-        }
+        // public virtual IEnumerable<TEntity> GetWithRawSql(string query, params object[] parameters)
+        // {
+        //     return dbSet.SqlQuery(query, parameters).ToList();
+        // }
     }
 }

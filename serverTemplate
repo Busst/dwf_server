@@ -1,0 +1,6 @@
+optionsBuilder.UseSqlServer($"Server={serverConfig.Name};Database={serverConfig.Schema};Trusted_Connection={serverConfig.Trusted};Uid={serverConfig.UserId};Pwd={serverConfig.Password}");
+private Resources.ServerConfig serverConfig;
+        public dwfContext(Resources.ServerConfig serverConfig)
+        {
+            this.serverConfig = serverConfig;
+        }
