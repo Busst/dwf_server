@@ -26,15 +26,19 @@ namespace server.user
         }
 
         public string GetUserSalt(string username) {
-            return null;
+            User user = context.Users
+                .Where(u => u.Username.Equals(username))
+                .FirstOrDefault();
+            if (user == null) throw new NotFoundException("User does not exist");
+            return user.Salt.Trim();
         }
 
         public override User GetByID(object id) {
             return context.Users.Where(u => u.Id == (int)id).Select(u => new User(){
-                Username = u.Username,
-                Email = u.Email,
+                Username = u.Username.Trim(),
+                Email = u.Email.Trim(),
                 Id = u.Id,
-                DisplayName = u.DisplayName
+                DisplayName = u.DisplayName.Trim()
             }).SingleOrDefault();
         }
         public void SaveUser(JObject userInfo) {
@@ -85,6 +89,20 @@ namespace server.user
                 return null;
             }
             
+        }
+        public User Login(JObject userInfo) {
+            string token = ((string) userInfo.SelectToken("token"));
+            log.Debug($"token: {token}");
+            string username = (string) userInfo.SelectToken("username");
+            log.Debug($"username: {username}");
+            User user = context.Users.Where(u => u.Username.Trim().Equals(username)).FirstOrDefault();
+            if (user == null) {
+                throw new NotFoundException("User not found");
+            }
+            if (!user.Password.Trim().Equals(token)) {
+                throw new NotAuthorizedException("Invalid login");
+            }
+            return this.GetByID(user.Id);
         }
     }
 }

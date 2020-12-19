@@ -34,7 +34,7 @@ namespace server.user
             //Directories should follow convention {directory}/
             switch (nextPath.ToLower()) {
                 case("getsalt"):
-                    response = unitOfWork.UserRepository.GetUserSalt();
+                    response = unitOfWork.UserRepository.GetUserSalt(queries["username"]);
                     break;
                 case("createsalt"):
                     string salt = GenerateSalt();
@@ -57,12 +57,13 @@ namespace server.user
         public override void HandlePost(string[] segments, NameValueCollection queries, string hash, string nextPath){
             log.Information("Next Path " + nextPath);
             //Directories should follow convention {directory} but WHY/
+            User user = null;
             switch (nextPath.ToLower()) {
                 case("saveuser"):
                     unitOfWork.UserRepository.SaveUser(body);
                     break;
                 case("checklogin"):
-                    User user = unitOfWork.UserRepository.CheckLogin(body);
+                    user = unitOfWork.UserRepository.CheckLogin(body);
                     if (user != null){
                         response = Parsing.ParseObject(user);
                     } else {
@@ -70,11 +71,9 @@ namespace server.user
                     }
                     break;
                 case("login"):
-                    User user = unitOfWork.UserRepository.CheckLogin("");
+                    user = unitOfWork.UserRepository.Login(body);
                     if (user != null){
                         response = Parsing.ParseObject(user);
-                    } else {
-                        throw new NotAuthorizedException("Invalid login token");
                     }
                     break;
                 default:
