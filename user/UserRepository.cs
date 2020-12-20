@@ -70,29 +70,23 @@ namespace server.user
         }
 
         public User CheckLogin(JObject userInfo) {
-            try {
-                string token = ((string) userInfo.SelectToken("token"));
-                log.Debug($"token: {token}");
-                int userId = (int) userInfo.SelectToken("userId");
-                log.Debug($"usedId: {userId}");
-                string username = ((string) userInfo.SelectToken("username"));
-                log.Debug($"username: {username}");
-                User user = context.Users.Where(u => u.Id == userId).FirstOrDefault();
-                if (user == null) {
-                    throw new NotFoundException("User not found");
-                }
-                if (!(user.Username.Trim().Equals(username) && user.Id == userId && user.Password.Trim().Equals(token))) {
-                    return null;
-                }
-                return this.GetByID(userId);
-            } 
-            catch (Exception e) {
-                log.Error(e.Message);
-                log.Error(e.InnerException.ToString());
-                log.Error(e.ToString());
+            string token = ((string) userInfo.SelectToken("token"));
+            log.Debug($"token: {token}");
+            string username = ((string) userInfo.SelectToken("username"));
+            log.Debug($"username: {username}");
+            User user = context.Users
+                .Where(u => u.Username.Trim() == username)
+                .FirstOrDefault();
+            
+            if (user == null) {
+                throw new NotFoundException("User not found");
+            }
+            if (!(user.Username.Trim().Equals(username) && user.AccessToken.Equals(token))) {
+                log.Information($"user {user.Username} has an invalid token");
                 return null;
             }
-            
+            log.Information($"user {user.Username} has been authorized");
+            return this.GetByUsername(username);
         }
         public User Login(JObject userInfo) {
             string token = ((string) userInfo.SelectToken("token"));
@@ -120,6 +114,15 @@ namespace server.user
                 .FirstOrDefault();
             if (user == null) throw new NotFoundException("User not found");
             return user;
+        }
+
+        public void SaveAccessToken(int id, string accessToken) {
+            User user = context.Users
+                .Where(u => u.Id == id)
+                .FirstOrDefault();
+            user.AccessToken = accessToken;
+            user.LastLogin = DateTime.Now;
+            context.SaveChanges();
         }
     }
 }

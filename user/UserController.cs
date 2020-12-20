@@ -66,7 +66,13 @@ namespace server.user
                 case("saveuser"):
                     user = unitOfWork.UserRepository.SaveUser(body);
                     if (user == null) throw new NotAuthorizedException("unable to save user");
-                    response = Parsing.ParseObject(user);
+                    string accessToken = GetAccessToken(user.Password);
+                    JObject package = new JObject(
+                        new JProperty("user", Parsing.ParseString(Parsing.ParseObject(user))),
+                        new JProperty("accessToken", accessToken)
+                    );
+                    unitOfWork.UserRepository.SaveAccessToken(user.Id, accessToken);
+                    response = package.ToString();
                     break;
                 case("checklogin"):
                     user = unitOfWork.UserRepository.CheckLogin(body);
@@ -114,6 +120,14 @@ namespace server.user
                 string salt_string = Encoding.Default.GetString(sha256.ComputeHash(salt));
                 log.Information($"Generated salt {salt_string}");
                 return salt_string;
+            }
+        }
+        public string GetAccessToken(string password) {
+            byte[] bytes = Encoding.ASCII.GetBytes(password + DateTime.Now.ToString());  
+            using (SHA256CryptoServiceProvider sha256 = new SHA256CryptoServiceProvider()){
+                string token = Encoding.Default.GetString(sha256.ComputeHash(bytes));
+                log.Information($"Generated token {token}");
+                return token;
             }
         }
         
