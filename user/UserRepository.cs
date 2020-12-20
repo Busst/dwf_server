@@ -25,12 +25,19 @@ namespace server.user
             return u.Id;
         }
 
-        public string GetUserSalt(string username) {
+        public string GetUserSalt(string email) {
             User user = context.Users
-                .Where(u => u.Username.Equals(username))
+                .Where(u => u.Email == email)
                 .FirstOrDefault();
             if (user == null) throw new NotFoundException("User does not exist");
-            return user.Salt.Trim();
+            return user.Salt;
+        }
+
+        public string GetByUsernameByEmail(string email) {
+            User user = context.Users
+                .Where(u => u.Email == email)
+                .FirstOrDefault();
+            return user.Username;
         }
 
         public override User GetByID(object id) {
@@ -75,13 +82,13 @@ namespace server.user
             string username = ((string) userInfo.SelectToken("username"));
             log.Debug($"username: {username}");
             User user = context.Users
-                .Where(u => u.Username.Trim() == username)
+                .Where(u => u.Username == username)
                 .FirstOrDefault();
             
             if (user == null) {
                 throw new NotFoundException("User not found");
             }
-            if (!(user.Username.Trim().Equals(username) && user.AccessToken.Equals(token))) {
+            if (!(user.Username == username && user.AccessToken == token)) {
                 log.Information($"user {user.Username} has an invalid token");
                 return null;
             }
@@ -91,16 +98,17 @@ namespace server.user
         public User Login(JObject userInfo) {
             string token = ((string) userInfo.SelectToken("token"));
             log.Debug($"token: {token}");
-            string username = (string) userInfo.SelectToken("username");
-            log.Debug($"username: {username}");
-            User user = context.Users.Where(u => u.Username.Trim().Equals(username)).FirstOrDefault();
+            string email = (string) userInfo.SelectToken("email");
+            log.Debug($"email: {email}");
+            User user = context.Users.Where(u => u.Email == email).FirstOrDefault();
             if (user == null) {
                 throw new NotFoundException("User not found");
             }
-            if (!user.Password.Trim().Equals(token)) {
+            log.Debug($"{user.Password}   {token}");
+            if (!(user.Password == token)) {
                 throw new NotAuthorizedException("Invalid login");
             }
-            return this.GetByID(user.Id);
+            return user;
         }
 
         public User GetByUsername(string username) {

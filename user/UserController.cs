@@ -34,7 +34,10 @@ namespace server.user
             //Directories should follow convention {directory}/
             switch (nextPath.ToLower()) {
                 case("getsalt"):
-                    response = unitOfWork.UserRepository.GetUserSalt(queries["username"]);
+                    response = new JObject(
+                        new JProperty("salt", unitOfWork.UserRepository.GetUserSalt(queries["username"])),
+                        new JProperty("username", unitOfWork.UserRepository.GetByUsernameByEmail(queries["username"]))
+                    ).ToString();
                     break;
                 case("createsalt"):
                     string salt = GenerateSalt();
@@ -85,6 +88,7 @@ namespace server.user
                 case("login"):
                     user = unitOfWork.UserRepository.Login(body);
                     if (user != null){
+                        unitOfWork.UserRepository.SaveAccessToken(user.Id, GetAccessToken(user.Password));
                         response = Parsing.ParseObject(user);
                     }
                     break;
