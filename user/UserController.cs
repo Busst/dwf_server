@@ -44,9 +44,13 @@ namespace server.user
                         new JProperty("salt", salt)
                     ).ToString();
                     break;
-                case("getbyid"):
+                case("getuserbyid"):
                     if (queries["id"] == null) throw new Exception("404");
                         response = Parsing.ParseObject(unitOfWork.UserRepository.GetByID(Int32.Parse(queries["id"])));
+                    break;
+                case("getuserbyusername"):
+                    if (queries["id"] == null) throw new Exception("404");
+                        response = Parsing.ParseObject(unitOfWork.UserRepository.GetByUsername(queries["id"]));
                     break;
                 case(""):
                     break;
@@ -60,7 +64,9 @@ namespace server.user
             User user = null;
             switch (nextPath.ToLower()) {
                 case("saveuser"):
-                    unitOfWork.UserRepository.SaveUser(body);
+                    user = unitOfWork.UserRepository.SaveUser(body);
+                    if (user == null) throw new NotAuthorizedException("unable to save user");
+                    response = Parsing.ParseObject(user);
                     break;
                 case("checklogin"):
                     user = unitOfWork.UserRepository.CheckLogin(body);

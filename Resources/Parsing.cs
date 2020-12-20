@@ -27,6 +27,9 @@ namespace server.Resources
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             }), Formatting.Indented);
         }
+        public static JObject ParseString(object o){
+            return JObject.Parse((string) o);
+        }
 
         public static string ParseSegment(string[] splitPath, out string[] segments){
             string nextPath = "";
@@ -75,8 +78,6 @@ namespace server.Resources
                 listIngreds.Add(TrimIngredient(i));
             }
             return listIngreds.ToArray();
-        }
-
-        
+        }        
     }
 }

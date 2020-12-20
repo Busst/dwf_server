@@ -34,6 +34,7 @@ namespace server.user
         }
 
         public override User GetByID(object id) {
+            
             return context.Users.Where(u => u.Id == (int)id).Select(u => new User(){
                 Username = u.Username.Trim(),
                 Email = u.Email.Trim(),
@@ -41,28 +42,31 @@ namespace server.user
                 DisplayName = u.DisplayName.Trim()
             }).SingleOrDefault();
         }
-        public void SaveUser(JObject userInfo) {
+        public User SaveUser(JObject userInfo) {
             try {
                 string token = (string) userInfo.SelectToken("token");
-                log.Information($"token: {token}");
+                // log.Information($"token: {token}");
                 string email = (string) userInfo.SelectToken("email");
-                log.Information($"email: {email}");
+                // log.Information($"email: {email}");
                 string username = (string) userInfo.SelectToken("username");
-                log.Information($"username: {username}");
+                // log.Information($"username: {username}");
                 int userId = (int) userInfo.SelectToken("userId");
-                log.Information($"id: {userId}");
+                // log.Information($"id: {userId}");
                 
                 User user = context.Users.Where(u => u.Id == userId).FirstOrDefault();
                 user.Email = email;
                 user.Password = token;
                 user.Username = username;
                 context.SaveChanges();
+                return user;
             } 
             catch (Exception e) {
                 log.Error(e.Message);
                 log.Error(e.InnerException.ToString());
                 log.Error(e.ToString());
+                return null;
             }
+
         }
 
         public User CheckLogin(JObject userInfo) {
@@ -103,6 +107,19 @@ namespace server.user
                 throw new NotAuthorizedException("Invalid login");
             }
             return this.GetByID(user.Id);
+        }
+
+        public User GetByUsername(string username) {
+            User user = context.Users
+                .Where(u => u.Username.Trim() == username)
+                .Select(u => new User(){
+                    Username = u.Username.Trim(),
+                    Email = u.Email.Trim(),
+                    Id = u.Id,
+                    DisplayName = u.DisplayName.Trim()})
+                .FirstOrDefault();
+            if (user == null) throw new NotFoundException("User not found");
+            return user;
         }
     }
 }

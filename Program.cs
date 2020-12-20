@@ -32,7 +32,14 @@ namespace server
             Log.Information("Logger initialized");
             
             ServerConfig serverConfig = JsonConvert.DeserializeObject<ServerConfig>(File.ReadAllText(@"./ServerConfig.json"));
-
+            if (args.Length > 0) {
+                foreach (string arg in args) {
+                    if (arg.ToLower() == "-runonce" || arg.ToLower() == "-r"){
+                        runOnce = true;
+                    }
+                }
+                
+            }
             dwfContext dbContext = new dwfContext(serverConfig);
             SimpleServerListener(new string[]{
                 "http://localhost:7321/",
@@ -70,6 +77,7 @@ namespace server
                 HttpListenerContext context = listener.GetContext();
                 HttpListenerRequest request = context.Request;
                 JObject body = Parsing.ParseRequestData(request);
+                Log.Debug($"user: {context.User}");
                 Log.Debug($"url: {request.Url}");
                 Log.Debug($"data: {body}");
                 string res = null;
@@ -102,6 +110,7 @@ namespace server
                     response.AddHeader("Access-Control-Allow-Methods", "GET, POST");
                     response.AddHeader("Access-Control-Max-Age", "1728000");
                 }
+                
                 response.AppendHeader("Access-Control-Allow-Origin", "*");
                 // Construct a response.
                 response.StatusCode = status;
