@@ -61,10 +61,10 @@ namespace server.recipes
             }
         }
         public override void HandlePost(string[] segments, NameValueCollection queries, string hash, string nextPath){
-            
+            Recipe r;
             switch (nextPath.ToLower()) {
-                case("add"):
-                    Recipe r = body.ToObject<Recipe>();
+                case("savedrink"):
+                    r = body.ToObject<Recipe>();
                     unitOfWork.RecipeRepository.Insert(r);
                     response = Parsing.ParseObject(r);
                     break;

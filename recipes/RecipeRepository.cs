@@ -40,14 +40,14 @@ namespace server.recipes
                 .Where(r => r.UserId == (int) id)
                 .Select(r => new Recipe(){
                     Id = r.Id,
-                    Name = r.Name.Trim(),
+                    Name = r.Name,
                     Description = r.Description,
                     Likes = r.Likes,
                     Type = r.Type,
-                    Ingredients = Parsing.TrimIngredients(r.Ingredients),
+                    Ingredients = r.Ingredients,
                     UserId = r.UserId,
                     User = new User(){
-                        Username = u.Username.Trim()
+                        Username = u.Username
                     }
                 })
                 .ToArray();
@@ -115,7 +115,5 @@ namespace server.recipes
             r.Type = entity.Type;
             context.SaveChanges();
         }
-
-
     }
 }

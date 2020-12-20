@@ -1,7 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-
 #nullable disable
 
 namespace server.models
@@ -47,22 +46,33 @@ namespace server.models
 
                 entity.HasOne(d => d.Recipe)
                     .WithMany(p => p.Ingredients)
-                    .HasForeignKey(d => d.RecipeId)
-                    .HasConstraintName("FK_Ingredients_Recipes");
+                    .HasForeignKey(d => d.RecipeId);
             });
 
             modelBuilder.Entity<Recipe>(entity =>
             {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id)
+                    .ValueGeneratedOnAdd();
+
                 entity.Property(e => e.Description).HasColumnType("ntext");
 
                 entity.Property(e => e.Name).HasMaxLength(50);
 
-                entity.Property(e => e.UserId).HasColumnName("UserID");
+                entity.Property(e => e.UserId);
+
+                entity.Property(e => e.Type);
+
+                entity.Property(e => e.Likes)
+                    .HasDefaultValue(0);
+                
+                entity.HasMany(r => r.Ingredients)
+                    .WithOne(i => i.Recipe)
+                    .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.Recipes)
-                    .HasForeignKey(d => d.UserId)
-                    .HasConstraintName("FK_Recipes_Users");
+                    .HasForeignKey(d => d.UserId);
             });
 
             modelBuilder.Entity<User>(entity =>
@@ -85,6 +95,10 @@ namespace server.models
                     .IsFixedLength(true);
 
                 entity.Property(e => e.Username).HasMaxLength(50);
+
+                entity.HasMany(u => u.Recipes)
+                    .WithOne(r => r.User)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             OnModelCreatingPartial(modelBuilder);

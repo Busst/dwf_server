@@ -16,7 +16,7 @@ namespace server.models
         public string Name { get; set; }
         public string Description { get; set; }
         public string Background { get; set; }
-        public byte? Type { get; set; }
+        public string Type { get; set; }
         public int? Likes { get; set; }
         public int UserId { get; set; }
 
