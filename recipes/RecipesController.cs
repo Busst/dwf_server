@@ -41,7 +41,7 @@ namespace server.recipes
                     response = Parsing.ParseObject(unitOfWork.RecipeRepository.GetByID(Int32.Parse(queries["id"])));
                     break;
                 case("getbytype"):
-                    response = Parsing.ParseObject(unitOfWork.RecipeRepository.GetByType(2));
+                    response = Parsing.ParseObject(unitOfWork.RecipeRepository.GetByType("drink"));
                     break;
                 case("getingredbyid"):
                     response = Parsing.ParseObject(unitOfWork.IngredientRepository.GetByID(1));
@@ -89,9 +89,11 @@ namespace server.recipes
             switch (nextPath.ToLower()) {
                 case("deletebyid"):
                     if (queries["id"] == null) throw new Exception("404");
-                        unitOfWork.RecipeRepository.Delete(Int32.Parse(queries["id"]));
-                        unitOfWork.Save();
-                        break;
+                    Recipe u = unitOfWork.RecipeRepository.GetByID(Int32.Parse(queries["id"]));
+                    log.Information($"{u}");
+                    unitOfWork.RecipeRepository.Delete(Int32.Parse(queries["id"]));
+                    unitOfWork.Save();
+                    break;
 
                 default:
                     throw new NotFoundException("File Path Not Found: Second link");

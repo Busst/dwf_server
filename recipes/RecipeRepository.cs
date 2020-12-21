@@ -18,7 +18,7 @@ namespace server.recipes
             this.log.ForContext<RecipeRepository>();
         }
 
-        public IEnumerable<Recipe> GetByType(byte getType) {
+        public IEnumerable<Recipe> GetByType(string type) {
             
             // return from Recipe r in (List<Recipe>)this.Get()
             //         where r.Type == getType
@@ -29,7 +29,7 @@ namespace server.recipes
         public override Recipe GetByID(object id)
         {
             Recipe r = base.GetByID(id);
-            // r.Ingredients = context.Ingredients.Where(i => i.RecipeId == r.Id).ToList();
+            r.Ingredients = context.Ingredients.Where(i => i.RecipeId == r.Id).ToList();
             return r;
         }
 
@@ -59,7 +59,7 @@ namespace server.recipes
             string id = (string) o_creatorName;
             string name = (string) o_name;
             log.Information($"Getting drink with user: {id} and name: {name}");
-            User u = context.Users.Where(u => u.Username.Equals(id)).FirstOrDefault();
+            User u = context.Users.Where(u => u.Username == id).FirstOrDefault();
             if (u == null) {
                 throw new NotFoundException("404: User not found");
             }
@@ -74,8 +74,8 @@ namespace server.recipes
                     Likes = r.Likes,
                     Background = r.Background ?? "",
                     User = new User(){
-                        Username = u.Username.Trim(),
-                        DisplayName = (u.DisplayName ?? u.Username ?? "").Trim()
+                        Username = u.Username,
+                        DisplayName = (u.DisplayName ?? u.Username ?? "")
                     }
                 })
                 .FirstOrDefault();
@@ -86,9 +86,9 @@ namespace server.recipes
         }
 
         public override void Update(Recipe entity)
-        {
+        {   //redo this man 
             Recipe r = GetByID (entity.Id);
-
+            
             foreach (Ingredient i in entity.Ingredients) {
                 if (i.Id != 0) {
                     Ingredient old = context.Ingredients.Find(i.Id);
@@ -113,6 +113,12 @@ namespace server.recipes
             r.Likes = entity.Likes;
             r.Name = entity.Name;
             r.Type = entity.Type;
+            context.SaveChanges();
+        }
+
+        public override void Delete(object id) {
+            Recipe r = GetByID(id);
+            context.Recipes.Remove(r);
             context.SaveChanges();
         }
     }

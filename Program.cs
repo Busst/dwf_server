@@ -41,6 +41,7 @@ namespace server
                 
             }
             dwfContext dbContext = new dwfContext(serverConfig);
+            Log.Information("Starting on port 7321");
             SimpleServerListener(new string[]{
                 "http://localhost:7321/",
                 },
