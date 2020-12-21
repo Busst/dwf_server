@@ -105,7 +105,7 @@ namespace server.recipes
                         Measurement = i.Measurement,
                         RecipeId = entity.Id,
                     };
-                    context.Ingredients.Add(n);
+                  context.Ingredients.Add(n);
                     context.SaveChanges();
                 }
             }
@@ -120,6 +120,17 @@ namespace server.recipes
             Recipe r = GetByID(id);
             context.Recipes.Remove(r);
             context.SaveChanges();
+        }
+
+        public Recipe[] Search(string param) {
+            IEnumerable<Recipe> recipes = context.Recipes.Where(r => 
+                r.Name.Contains(param)
+                || r.Background.Contains(param)
+                || r.Description.Contains(param))
+                .Select(r => new Recipe{
+                    Id = r.Id
+                });
+            return recipes.ToArray();
         }
     }
 }

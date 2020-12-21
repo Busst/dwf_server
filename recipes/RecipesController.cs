@@ -8,6 +8,7 @@ using server.repository;
 using server.Resources;
 using server.models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 
 namespace server.recipes
@@ -51,6 +52,9 @@ namespace server.recipes
                     break;
                 case("getbycreatorname"):
                     response = Parsing.ParseObject(unitOfWork.RecipeRepository.GetByUserDrinkName(queries["creator"], queries["name"]));
+                    break;
+                case("search"):
+                    response = SearchDrinks(queries["input"]);
                     break;
                 case("deeper/"):
                     nextPath = Parsing.ParseSegment(segments, out segments);
@@ -101,6 +105,29 @@ namespace server.recipes
         }
         public override void HandlePut(string[] segments, NameValueCollection queries, string hash, string nextPath){
 
+        }
+
+        public string SearchDrinks(string param) {
+            Ingredient[] ingredients = unitOfWork.IngredientRepository.Search(param);
+            Recipe[] recipes = unitOfWork.RecipeRepository.Search(param);
+            Dictionary<int, int> drinks = new Dictionary<int, int>();
+            foreach(Ingredient i in ingredients) {
+                if (drinks.ContainsKey(i.RecipeId)){
+                    drinks[i.RecipeId]++;
+                } else {
+                    drinks[i.RecipeId] = 1;
+                }
+            }
+            foreach(Recipe r in recipes) {
+                if (drinks.ContainsKey(r.Id)){
+                    drinks[r.Id]++;
+                } else {
+                    drinks[r.Id] = 1;
+                }
+            }
+            List<KeyValuePair<int, int>> list = drinks.ToList();
+            list.Sort((x, y) => (x.Value - y.Value));
+            return Parsing.ParseList(list);
         }
         
         
