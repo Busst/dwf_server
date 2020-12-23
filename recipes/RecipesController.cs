@@ -18,17 +18,19 @@ namespace server.recipes
         // private st/ring reponse;
         private ILogger log;
         private UnitOfWork unitOfWork;
-        public RecipesController(ILogger log, ServerConfig serverConfig) {
+        private HttpListenerResponse httpListenerResponse;
+        public RecipesController(ILogger log, ServerConfig serverConfig, HttpListenerResponse response) {
             this.log = log;
             this.log.ForContext<RecipesController>();
             this.log.Information("Creating a new user repo");
             unitOfWork = new UnitOfWork(this.log,  new dwfContext(serverConfig));
+            this.httpListenerResponse = response;
         }
-        public RecipesController(ILogger log, DbContext dbContext) {
+        public RecipesController(ILogger log, DbContext dbContext, HttpListenerResponse response) {
             this.log = log;
             this.log.ForContext<RecipesController>();
             unitOfWork = new UnitOfWork(this.log, (dwfContext) dbContext);
-            
+            this.httpListenerResponse = response;
         }
         public override void HandleGet(string[] segments, NameValueCollection queries, string hash, string nextPath) {
             log.Information("Next Path: " + nextPath);

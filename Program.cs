@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
+using System.Web;
 using System.Net.Http;
 using Serilog;
 using Newtonsoft.Json; 
@@ -64,7 +65,7 @@ namespace server
 
             // Create a listener.
             HttpListener listener = new HttpListener();
-            
+
             // Add the prefixes.
             foreach (string s in prefixes)
             {
@@ -77,14 +78,18 @@ namespace server
                 // Note: The GetContext method blocks while waiting for a request.
                 HttpListenerContext context = listener.GetContext();
                 HttpListenerRequest request = context.Request;
+                foreach (Cookie cookie in request.Cookies){
+                    Log.Information($"Cookie: {cookie.Name}: {HttpUtility.UrlDecode(cookie.Value)}");
+                }
                 JObject body = Parsing.ParseRequestData(request);
-                Log.Debug($"user: {context.User}");
                 Log.Debug($"url: {request.Url}");
                 Log.Debug($"data: {body}");
                 string res = null;
                 int status = 200;
+                // Obtain a response object.
+                HttpListenerResponse response = context.Response;
                 try {
-                    res = HandleRequest(request, dbContext, body);
+                    res = HandleRequest(request, dbContext, body, response);
                 } catch (NotAuthorizedException e) {
                     res = e.Message;
                     status = 401;
@@ -103,15 +108,12 @@ namespace server
                     Log.Error($"inner: {e.InnerException}");
                     Log.Error($"target method: {e.TargetSite}");
                 }
-                // Obtain a response object.
-                HttpListenerResponse response = context.Response;
                 if (request.HttpMethod == "OPTIONS")
                 {
                     response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With");
                     response.AddHeader("Access-Control-Allow-Methods", "GET, POST");
                     response.AddHeader("Access-Control-Max-Age", "1728000");
                 }
-                
                 response.AppendHeader("Access-Control-Allow-Origin", "*");
                 // Construct a response.
                 response.StatusCode = status;
@@ -127,7 +129,7 @@ namespace server
             // listener.Stop();
         }
 
-        public static string HandleRequest(HttpListenerRequest req, DbContext dbContext, JObject body){
+        public static string HandleRequest(HttpListenerRequest req, DbContext dbContext, JObject body, HttpListenerResponse response){
             string[] tempPath = req.RawUrl.Split("/");
             string s = null;
             if (tempPath.Length > 1) s = tempPath[1];
@@ -136,10 +138,10 @@ namespace server
             Log.Debug("First Subdirectory: " + s);
             switch (s){
                 case "users":
-                    controller = new UserController(Log.Logger, dbContext);
+                    controller = new UserController(Log.Logger, dbContext, response);
                     break;
                 case "recipes":
-                    controller = new RecipesController(Log.Logger, dbContext);
+                    controller = new RecipesController(Log.Logger, dbContext, response);
                     break;
                 default:
                     break;

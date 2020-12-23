@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Web;
 using Serilog;
 using server.exceptions;
 using System.Collections.Specialized;
@@ -18,16 +19,18 @@ namespace server.user
         // private st/ring reponse;
         private ILogger log;
         private UnitOfWork unitOfWork;
-        public UserController(ILogger log, ServerConfig serverConfig) {
+        private HttpListenerResponse httpListenerResponse;
+        public UserController(ILogger log, ServerConfig serverConfig, HttpListenerResponse response) {
             this.log = log;
             this.log.ForContext<UserController>();
             unitOfWork = new UnitOfWork(this.log, new dwfContext(serverConfig));
+            this.httpListenerResponse = response;
         }
-        public UserController(ILogger log, DbContext dbContext) {
+        public UserController(ILogger log, DbContext dbContext, HttpListenerResponse response) {
             this.log = log;
             this.log.ForContext<UserController>();
             unitOfWork = new UnitOfWork(this.log, (dwfContext) dbContext);
-            
+            this.httpListenerResponse = response;
         }
         public override void HandleGet(string[] segments, NameValueCollection queries, string hash, string nextPath) {
             
@@ -65,11 +68,12 @@ namespace server.user
             log.Information("Next Path " + nextPath);
             //Directories should follow convention {directory} but WHY/
             User user = null;
+            string accessToken = null;
             switch (nextPath.ToLower()) {
                 case("saveuser"):
                     user = unitOfWork.UserRepository.SaveUser(body);
                     if (user == null) throw new NotAuthorizedException("unable to save user");
-                    string accessToken = GetAccessToken(user.Password);
+                    accessToken = GetAccessToken(user.Password);
                     JObject package = new JObject(
                         new JProperty("user", Parsing.ParseString(Parsing.ParseObject(user))),
                         new JProperty("accessToken", accessToken)
@@ -88,7 +92,15 @@ namespace server.user
                 case("login"):
                     user = unitOfWork.UserRepository.Login(body);
                     if (user != null){
-                        unitOfWork.UserRepository.SaveAccessToken(user.Id, GetAccessToken(user.Password));
+                        accessToken = GetAccessToken(user.Password);
+                        unitOfWork.UserRepository.SaveAccessToken(user.Id, accessToken);
+                        Cookie cookie = new Cookie{
+                            Name = "AccessToken",
+                            Secure = true,
+                            HttpOnly = true,
+                            Value = HttpUtility.UrlEncode(accessToken)
+                        };
+                        httpListenerResponse.AppendCookie(cookie);
                         response = Parsing.ParseObject(user);
                     }
                     break;
@@ -129,7 +141,7 @@ namespace server.user
         public string GetAccessToken(string password) {
             byte[] bytes = Encoding.ASCII.GetBytes(password + DateTime.Now.ToString());  
             using (SHA256CryptoServiceProvider sha256 = new SHA256CryptoServiceProvider()){
-                string token = Encoding.Default.GetString(sha256.ComputeHash(bytes));
+                string token = Encoding.ASCII.GetString(sha256.ComputeHash(bytes));
                 log.Information($"Generated token {token}");
                 return token;
             }
