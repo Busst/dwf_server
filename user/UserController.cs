@@ -20,17 +20,20 @@ namespace server.user
         private ILogger log;
         private UnitOfWork unitOfWork;
         private HttpListenerResponse httpListenerResponse;
-        public UserController(ILogger log, ServerConfig serverConfig, HttpListenerResponse response) {
+        private CookieCollection cookies;
+        public UserController(ILogger log, ServerConfig serverConfig, HttpListenerResponse response, CookieCollection cookies) {
             this.log = log;
             this.log.ForContext<UserController>();
             unitOfWork = new UnitOfWork(this.log, new dwfContext(serverConfig));
             this.httpListenerResponse = response;
+            this.cookies = cookies;
         }
-        public UserController(ILogger log, DbContext dbContext, HttpListenerResponse response) {
+        public UserController(ILogger log, DbContext dbContext, HttpListenerResponse response, CookieCollection cookies) {
             this.log = log;
             this.log.ForContext<UserController>();
             unitOfWork = new UnitOfWork(this.log, (dwfContext) dbContext);
             this.httpListenerResponse = response;
+            this.cookies = cookies;
         }
         public override void HandleGet(string[] segments, NameValueCollection queries, string hash, string nextPath) {
             
@@ -58,7 +61,15 @@ namespace server.user
                     if (queries["id"] == null) throw new Exception("404");
                         response = Parsing.ParseObject(unitOfWork.UserRepository.GetByUsername(queries["id"]));
                     break;
-                case(""):
+                case("generatesalt"):
+                    response = GenerateSalt();
+                    break;
+                case("checklogin"):
+                    if (!CheckLogin()){
+                        log.Information("Check login failed");
+                        throw new NotAuthorizedException("Token invalid");
+                    }
+                    log.Information("Check login passed");
                     break;
                 default:
                     throw new NotFoundException("File Path Not Found: Get: Second link");
@@ -81,26 +92,23 @@ namespace server.user
                     unitOfWork.UserRepository.SaveAccessToken(user.Id, accessToken);
                     response = package.ToString();
                     break;
-                case("checklogin"):
-                    user = unitOfWork.UserRepository.CheckLogin(body);
-                    if (user != null){
-                        response = Parsing.ParseObject(user);
-                    } else {
-                        throw new NotAuthorizedException("Invalid login token");
-                    }
-                    break;
                 case("login"):
                     user = unitOfWork.UserRepository.Login(body);
                     if (user != null){
                         accessToken = GetAccessToken(user.Password);
                         unitOfWork.UserRepository.SaveAccessToken(user.Id, accessToken);
-                        Cookie cookie = new Cookie{
-                            Name = "AccessToken",
+                        httpListenerResponse.SetCookie(new Cookie{
+                            Name = "Token",
                             Secure = true,
                             HttpOnly = true,
                             Value = HttpUtility.UrlEncode(accessToken)
-                        };
-                        httpListenerResponse.AppendCookie(cookie);
+                        });
+                        httpListenerResponse.SetCookie(new Cookie{
+                            Name = "Id",
+                            Secure = true,
+                            HttpOnly = true,
+                            Value = HttpUtility.UrlEncode($"{user.Id}")
+                        });
                         response = Parsing.ParseObject(user);
                     }
                     break;
@@ -130,21 +138,49 @@ namespace server.user
         public string GenerateSalt() {
             byte[] salt = new byte[32];
             using (RNGCryptoServiceProvider rndCsp = new RNGCryptoServiceProvider()){
-                rndCsp.GetBytes(salt);
+                rndCsp.GetNonZeroBytes(salt);
             }
             using (SHA256CryptoServiceProvider sha256 = new SHA256CryptoServiceProvider()){
-                string salt_string = Encoding.Default.GetString(sha256.ComputeHash(salt));
+                string salt_string = Base64Encode(Encoding.BigEndianUnicode.GetString(sha256.ComputeHash(salt)));
                 log.Information($"Generated salt {salt_string}");
                 return salt_string;
             }
         }
         public string GetAccessToken(string password) {
-            byte[] bytes = Encoding.ASCII.GetBytes(password + DateTime.Now.ToString());  
+            byte[] bytes = Encoding.UTF8.GetBytes(password + DateTime.Now.ToString());  
             using (SHA256CryptoServiceProvider sha256 = new SHA256CryptoServiceProvider()){
-                string token = Encoding.ASCII.GetString(sha256.ComputeHash(bytes));
+                string token = Base64Encode(Encoding.BigEndianUnicode.GetString(sha256.ComputeHash(bytes)));
                 log.Information($"Generated token {token}");
                 return token;
             }
+        }
+        public static string Base64Encode(string plainText) {
+            var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+            return System.Convert.ToBase64String(plainTextBytes);
+        }
+        public static string Base64Decode(string base64EncodedData) {
+            var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
+            return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
+        }
+
+        public bool CheckLogin() {
+            try {
+                string token = "";
+                int id = -1;
+                foreach(Cookie cookie in cookies){ 
+                    if (cookie.Name == "Token"){
+                        token = HttpUtility.UrlDecode(cookie.Value);
+                    }
+                    if (cookie.Name == "Id") {
+                        id = Int32.Parse(HttpUtility.HtmlDecode(cookie.Value));
+                    }
+                }
+                return unitOfWork.UserRepository.CheckLogin(token, id);
+            }
+            catch (Exception e){
+                log.Debug($"{e.Message}");
+            }
+            return false;
         }
         
     }

@@ -76,38 +76,27 @@ namespace server.user
 
         }
 
-        public User CheckLogin(JObject userInfo) {
-            string token = ((string) userInfo.SelectToken("token"));
-            log.Debug($"token: {token}");
-            string username = ((string) userInfo.SelectToken("username"));
-            log.Debug($"username: {username}");
-            User user = context.Users
-                .Where(u => u.Username == username)
+        public bool CheckLogin(string token, int id) {
+            User user = context.Users.Where(u => 
+                    u.AccessToken == token &&
+                    u.Id == id)
                 .FirstOrDefault();
-            
-            if (user == null) {
-                throw new NotFoundException("User not found");
-            }
-            if (!(user.Username == username && user.AccessToken == token)) {
-                log.Information($"user {user.Username} has an invalid token");
-                return null;
-            }
-            log.Information($"user {user.Username} has been authorized");
-            return this.GetByUsername(username);
+            return user != null;
         }
         public User Login(JObject userInfo) {
             string token = ((string) userInfo.SelectToken("token"));
-            log.Debug($"token: {token}");
+            // log.Debug($"token: {token}");
             string email = (string) userInfo.SelectToken("email");
-            log.Debug($"email: {email}");
+            // log.Debug($"email: {email}");
             User user = context.Users.Where(u => u.Email == email).FirstOrDefault();
             if (user == null) {
                 throw new NotFoundException("User not found");
             }
-            log.Debug($"{user.Password}   {token}");
+            log.Debug($"{user.DisplayName}");
             if (!(user.Password == token)) {
                 throw new NotAuthorizedException("Invalid login");
             }
+            log.Information($"User: {user.Username} has logged in succesfully");
             return user;
         }
 

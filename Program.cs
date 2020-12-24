@@ -78,8 +78,9 @@ namespace server
                 // Note: The GetContext method blocks while waiting for a request.
                 HttpListenerContext context = listener.GetContext();
                 HttpListenerRequest request = context.Request;
+                if (request.Cookies.Count == 0) Log.Debug("No Cookies");
                 foreach (Cookie cookie in request.Cookies){
-                    Log.Information($"Cookie: {cookie.Name}: {HttpUtility.UrlDecode(cookie.Value)}");
+                    Log.Debug($"Cookie: {cookie.Name}: {HttpUtility.UrlDecode(cookie.Value)}");
                 }
                 JObject body = Parsing.ParseRequestData(request);
                 Log.Debug($"url: {request.Url}");
@@ -88,6 +89,15 @@ namespace server
                 int status = 200;
                 // Obtain a response object.
                 HttpListenerResponse response = context.Response;
+                if (request.HttpMethod == "OPTIONS")
+                {
+                    response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With");
+                    response.AddHeader("Access-Control-Allow-Methods", "GET, POST");
+                    response.AddHeader("Access-Control-Max-Age", "1728000");
+                }
+                response.AddHeader("Access-Control-Allow-Credentials", "true");
+                response.AppendHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+
                 try {
                     res = HandleRequest(request, dbContext, body, response);
                 } catch (NotAuthorizedException e) {
@@ -108,13 +118,6 @@ namespace server
                     Log.Error($"inner: {e.InnerException}");
                     Log.Error($"target method: {e.TargetSite}");
                 }
-                if (request.HttpMethod == "OPTIONS")
-                {
-                    response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With");
-                    response.AddHeader("Access-Control-Allow-Methods", "GET, POST");
-                    response.AddHeader("Access-Control-Max-Age", "1728000");
-                }
-                response.AppendHeader("Access-Control-Allow-Origin", "*");
                 // Construct a response.
                 response.StatusCode = status;
                 string responseString = $"{res}";
@@ -133,12 +136,11 @@ namespace server
             string[] tempPath = req.RawUrl.Split("/");
             string s = null;
             if (tempPath.Length > 1) s = tempPath[1];
-            
             IRequestHandler controller = null;
             Log.Debug("First Subdirectory: " + s);
             switch (s){
                 case "users":
-                    controller = new UserController(Log.Logger, dbContext, response);
+                    controller = new UserController(Log.Logger, dbContext, response, req.Cookies);
                     break;
                 case "recipes":
                     controller = new RecipesController(Log.Logger, dbContext, response);

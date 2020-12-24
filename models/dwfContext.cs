@@ -77,9 +77,7 @@ namespace server.models
 
             modelBuilder.Entity<User>(entity =>
             {
-                entity.Property(e => e.DisplayName)
-                    .HasMaxLength(30)
-                    .HasDefaultValue("");
+                entity.Property(e => e.DisplayName);
 
                 entity.Property(e => e.Email).HasMaxLength(50);
 
