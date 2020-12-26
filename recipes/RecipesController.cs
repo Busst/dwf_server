@@ -49,8 +49,8 @@ namespace server.recipes
                 case("getingredbyid"):
                     response = Parsing.ParseObject(unitOfWork.IngredientRepository.GetByID(1));
                     break;
-                case("getdrinksbyuserid"):
-                    response = Parsing.ParseList(unitOfWork.RecipeRepository.GetByUserID(Int32.Parse(queries["id"])));
+                case("getrecipesbyuserid"):
+                    response = Parsing.ParseList(unitOfWork.RecipeRepository.GetByUserID(Int32.Parse(queries["id"]), (RecipeType) Enum.Parse(typeof(RecipeType), queries["type"])));
                     break;
                 case("getbycreatorname"):
                     response = Parsing.ParseObject(unitOfWork.RecipeRepository.GetByUserDrinkName(queries["creator"], queries["name"]));
@@ -58,7 +58,7 @@ namespace server.recipes
                 case("search"):
                     response = SearchDrinks(queries["input"]);
                     break;
-                case("getcarouselitems"):
+                case("getfrontpage"):
                     response = unitOfWork.FrontPageRepository.GetCarouselItems();
                     break;
                 case("deeper/"):
@@ -77,14 +77,19 @@ namespace server.recipes
                     unitOfWork.RecipeRepository.Insert(r);
                     response = Parsing.ParseObject(r);
                     break;
-                case("insertnotes"):
+                case("insertnote"):
                     FrontPage page = body.ToObject<FrontPage>();
                     unitOfWork.FrontPageRepository.AddNotes(page);
                     break;
-                case("updaterecipes"):
-                    int recipe = (int)body[0];
-                    int food = (int)body[1];
-                    unitOfWork.FrontPageRepository.AddDaily(recipe, food);
+                case("insertnotes"):
+                    JArray array = (JArray) body.SelectToken("notes");
+                    List<FrontPage> pages = array.ToObject<List<FrontPage>>();
+                    unitOfWork.FrontPageRepository.AddNotes(pages);
+                    break;
+                case("updatefrontpage"):
+                    int drink = (int)body.SelectToken("drink");
+                    int food = (int)body.SelectToken("food");
+                    unitOfWork.FrontPageRepository.AddDaily(drink, food);
                     break;
                 default:
                     throw new NotFoundException("File Path Not Found: Second link");

@@ -10,14 +10,26 @@ namespace server.Resources
     public class Parsing
     {
         public static string ParseList(IEnumerable<User> list){
-            return JsonConvert.SerializeObject(list, Formatting.Indented);
+            return JsonConvert.SerializeObject(list, Formatting.Indented, 
+                    new JsonSerializerSettings(){
+                        ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                    }
+                );
         }
 
         public static string ParseList(List<KeyValuePair<int, int>> list){
-            return JsonConvert.SerializeObject(list, Formatting.Indented);
+            return JsonConvert.SerializeObject(list, Formatting.Indented, 
+                    new JsonSerializerSettings(){
+                        ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                    }
+                );
         }
         public static string ParseList(List<object> list){
-            return JsonConvert.SerializeObject(list, Formatting.Indented);
+            return JsonConvert.SerializeObject(list, Formatting.Indented, 
+                    new JsonSerializerSettings(){
+                        ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                    }
+                );
         }
         public static string ParseList(IEnumerable<Recipe> list){
             return JsonConvert.SerializeObject(list, Formatting.Indented, 
@@ -27,7 +39,11 @@ namespace server.Resources
                 );
         }
         public static string ParseList(IEnumerable<Ingredient> list){
-            return JsonConvert.SerializeObject(list, Formatting.Indented);
+            return JsonConvert.SerializeObject(list, Formatting.Indented, 
+                    new JsonSerializerSettings(){
+                        ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                    }
+                );
         }
         public static string ParseObject(object o){
             return JsonConvert.SerializeObject(JObject.FromObject(o, new JsonSerializer(){

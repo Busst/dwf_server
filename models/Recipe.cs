@@ -16,7 +16,7 @@ namespace server.models
         public string Name { get; set; }
         public string Description { get; set; }
         public string Background { get; set; }
-        public string Type { get; set; }
+        public RecipeType Type { get; set; } = RecipeType.Food;
         public int? Likes { get; set; }
         public int UserId { get; set; }
 

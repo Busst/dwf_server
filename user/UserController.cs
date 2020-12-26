@@ -73,6 +73,14 @@ namespace server.user
                     log.Information("Check login passed");
                     response = Parsing.ParseObject(user);
                     break;
+                case("logout"):
+                    bool loggedOut = Logout();
+                    if (loggedOut){
+                        response = "true";
+                    } else {
+                        response = "false";
+                    }
+                    break;
                 default:
                     throw new NotFoundException("File Path Not Found: Get: Second link");
             }
@@ -165,6 +173,14 @@ namespace server.user
             return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
         }
 
+        public bool Logout(){
+            User u = CheckLogin();
+            if (u == null) return true;
+            foreach(Cookie cookie in cookies){ 
+                cookie.Expired = true;    
+            }
+            return unitOfWork.UserRepository.Logout(u.Id);
+        }
         public User CheckLogin() {
             try {
                 string token = "";

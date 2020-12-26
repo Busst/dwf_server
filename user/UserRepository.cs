@@ -88,6 +88,18 @@ namespace server.user
                 .FirstOrDefault();
             return user;
         }
+
+        public bool Logout(int id) {
+            try {
+                User user = context.Users.Where(u => u.Id == id).FirstOrDefault();
+                if (user == null) return true;
+                user.AccessToken = "";
+                context.SaveChanges();
+            } catch (Exception e) {
+                log.Debug(e.Message);
+            }
+            return true;
+        }
         public User Login(JObject userInfo) {
             string token = ((string) userInfo.SelectToken("token"));
             // log.Debug($"token: {token}");

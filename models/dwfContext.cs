@@ -62,7 +62,11 @@ namespace server.models
 
                 entity.Property(e => e.UserId);
 
-                entity.Property(e => e.Type);
+                entity.Property(e => e.Type)
+                    .HasConversion(
+                        v => v.ToString(),
+                        v => (RecipeType)Enum.Parse(typeof(RecipeType), v)
+                    );
 
                 entity.Property(e => e.Likes)
                     .HasDefaultValue(0);

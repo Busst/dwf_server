@@ -2,6 +2,7 @@ using server.repository;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using System;
 using Serilog;
 using server.models;
 using Microsoft.EntityFrameworkCore;
@@ -29,15 +30,22 @@ namespace server.recipes
         public override Recipe GetByID(object id)
         {
             Recipe r = base.GetByID(id);
+            r.User = context.Users.Where(u => u.Id == r.UserId)
+                        .Select(u => new User{
+                            Username = u.Username,
+                            DisplayName = u.DisplayName,
+                            Id = u.Id
+                        })
+                        .FirstOrDefault();
             r.Ingredients = context.Ingredients.Where(i => i.RecipeId == r.Id).ToList();
             return r;
         }
 
-        public Recipe[] GetByUserID(object id)
+        public Recipe[] GetByUserID(object id, RecipeType type)
         {
             User u = context.Users.Where(u => u.Id == (int) id).FirstOrDefault();
             Recipe[] recipes = context.Recipes
-                .Where(r => r.UserId == (int) id)
+                .Where(r => r.UserId == (int) id && (r.Type == type || type == RecipeType.Both))
                 .Select(r => new Recipe(){
                     Id = r.Id,
                     Name = r.Name,
