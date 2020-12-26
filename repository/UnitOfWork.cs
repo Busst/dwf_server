@@ -13,6 +13,7 @@ namespace server.repository
         private UserRepository userRepository;
         private RecipeRepository recipeRepository;
         private IngredientRepository ingredientRepository;
+        private FrontPageRepository frontPageRepository;
         private ILogger log;
         public UnitOfWork(ILogger logger, dwfContext context){
             this.context = context;
@@ -55,6 +56,20 @@ namespace server.repository
                     
                 }
                 return ingredientRepository;
+            }
+        }
+
+        public FrontPageRepository FrontPageRepository
+        {
+            get
+            {
+
+                if (this.frontPageRepository == null)
+                {
+                    this.frontPageRepository = new FrontPageRepository(context, log);
+                    
+                }
+                return frontPageRepository;
             }
         }
         

@@ -58,6 +58,9 @@ namespace server.recipes
                 case("search"):
                     response = SearchDrinks(queries["input"]);
                     break;
+                case("getcarouselitems"):
+                    response = unitOfWork.FrontPageRepository.GetCarouselItems();
+                    break;
                 case("deeper/"):
                     nextPath = Parsing.ParseSegment(segments, out segments);
                     HandleGet(segments, queries, hash, nextPath);
@@ -74,6 +77,15 @@ namespace server.recipes
                     unitOfWork.RecipeRepository.Insert(r);
                     response = Parsing.ParseObject(r);
                     break;
+                case("insertnotes"):
+                    FrontPage page = body.ToObject<FrontPage>();
+                    unitOfWork.FrontPageRepository.AddNotes(page);
+                    break;
+                case("updaterecipes"):
+                    int recipe = (int)body[0];
+                    int food = (int)body[1];
+                    unitOfWork.FrontPageRepository.AddDaily(recipe, food);
+                    break;
                 default:
                     throw new NotFoundException("File Path Not Found: Second link");
             }
@@ -85,6 +97,7 @@ namespace server.recipes
                     Recipe r = body.ToObject<Recipe>();
                     unitOfWork.RecipeRepository.Update(r);
                     response = Parsing.ParseObject(r);
+                    
                     break;
                 default:
                     throw new NotFoundException("File Path Not Found: Second link");

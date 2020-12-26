@@ -21,6 +21,7 @@ namespace server.models
         public virtual DbSet<Ingredient> Ingredients { get; set; }
         public virtual DbSet<Recipe> Recipes { get; set; }
         public virtual DbSet<User> Users { get; set; }
+        public virtual DbSet<FrontPage> FrontPage { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -98,6 +99,20 @@ namespace server.models
                     .WithOne(r => r.User)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
+            modelBuilder.Entity<FrontPage>(entity => {
+
+                entity.Property(e => e.Id);
+
+                entity.Property(e => e.RecipeId);
+
+                entity.Property(e => e.Notes);
+
+                entity.Property(e => e.Type)
+                    .HasConversion(
+                        v => v.ToString(),
+                        v => (FrontPageType)Enum.Parse(typeof(FrontPageType), v));
+                    });
 
             OnModelCreatingPartial(modelBuilder);
         }

@@ -16,6 +16,9 @@ namespace server.Resources
         public static string ParseList(List<KeyValuePair<int, int>> list){
             return JsonConvert.SerializeObject(list, Formatting.Indented);
         }
+        public static string ParseList(List<object> list){
+            return JsonConvert.SerializeObject(list, Formatting.Indented);
+        }
         public static string ParseList(IEnumerable<Recipe> list){
             return JsonConvert.SerializeObject(list, Formatting.Indented, 
                     new JsonSerializerSettings(){

@@ -76,12 +76,17 @@ namespace server.user
 
         }
 
-        public bool CheckLogin(string token, int id) {
+        public User CheckLogin(string token, int id) {
             User user = context.Users.Where(u => 
                     u.AccessToken == token &&
                     u.Id == id)
+                .Select(u => new User{
+                    DisplayName = u.DisplayName,
+                    Username = u.Username,
+                    Id = u.Id
+                })
                 .FirstOrDefault();
-            return user != null;
+            return user;
         }
         public User Login(JObject userInfo) {
             string token = ((string) userInfo.SelectToken("token"));

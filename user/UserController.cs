@@ -65,11 +65,13 @@ namespace server.user
                     response = GenerateSalt();
                     break;
                 case("checklogin"):
-                    if (!CheckLogin()){
+                    User user = CheckLogin();
+                    if (user == null){
                         log.Information("Check login failed");
                         throw new NotAuthorizedException("Token invalid");
                     }
                     log.Information("Check login passed");
+                    response = Parsing.ParseObject(user);
                     break;
                 default:
                     throw new NotFoundException("File Path Not Found: Get: Second link");
@@ -163,7 +165,7 @@ namespace server.user
             return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
         }
 
-        public bool CheckLogin() {
+        public User CheckLogin() {
             try {
                 string token = "";
                 int id = -1;
@@ -180,7 +182,7 @@ namespace server.user
             catch (Exception e){
                 log.Debug($"{e.Message}");
             }
-            return false;
+            return null;
         }
         
     }
