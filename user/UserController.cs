@@ -81,6 +81,10 @@ namespace server.user
                         response = "false";
                     }
                     break;
+                case("getuserprofilepic"):
+                    int id = (int) Int64.Parse(queries["id"]);
+                    
+                    break;
                 default:
                     throw new NotFoundException("File Path Not Found: Get: Second link");
             }

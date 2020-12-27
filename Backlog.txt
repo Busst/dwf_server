@@ -1,10 +1,4 @@
 TODO
-Carousel items
-	items to add:
-		dotd
-		fotd
-		patch notes?
-Foods tab profile
 foods card
 up/down votes
 remove recipe
@@ -14,5 +8,8 @@ edit profile
 	change profile picture
 	change display name
 	change password
-search
 share
+
+
+signup validation back end
+
