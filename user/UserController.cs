@@ -83,7 +83,6 @@ namespace server.user
                     break;
                 case("getuserprofilepic"):
                     int id = (int) Int64.Parse(queries["id"]);
-                    
                     break;
                 default:
                     throw new NotFoundException("File Path Not Found: Get: Second link");
@@ -93,6 +92,8 @@ namespace server.user
             log.Information("Next Path " + nextPath);
             //Directories should follow convention {directory} but WHY/
             User user = null;
+            int userId;
+            int drinkId;
             string accessToken = null;
             switch (nextPath.ToLower()) {
                 case("saveuser"):
@@ -125,6 +126,32 @@ namespace server.user
                         });
                         response = Parsing.ParseObject(user);
                     }
+                    break;
+                case("likeuserdrink"):
+                    user = CheckLogin();
+                    userId = (int) body.SelectToken("userId");
+                    drinkId = (int) body.SelectToken("drinkId");
+                    if (user.Id != userId) {
+                        response = "false";
+                    } else {
+                        // response = 
+                    }
+                    break;
+                case("unlikeuserdrink"):
+                    user = CheckLogin();
+                    userId = (int) body.SelectToken("userId");
+                    drinkId = (int) body.SelectToken("drinkId");
+                    if (user.Id != userId) {
+                        response = "false";
+                    } else {
+                        // response = 
+                    }
+                    break;
+                case("getlike"):
+                    user = CheckLogin();
+                    userId = (int) body.SelectToken("userId");
+                    drinkId = (int) body.SelectToken("drinkId");
+                    
                     break;
                 default:
                     throw new NotFoundException("File Path Not Found: Post: Second link");
