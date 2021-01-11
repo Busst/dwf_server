@@ -103,6 +103,8 @@ namespace server.user
             log.Information("Next Path - POST - " + nextPath);
             //Directories should follow convention {directory} but WHY/
             User user = null;
+            int userId;
+            int drinkId;
             string accessToken = null;
             Picture image = null;
             switch (nextPath.ToLower()) {
@@ -155,6 +157,31 @@ namespace server.user
                     image.FilePath = directory + $"/backdrop.jpeg";
                     Directory.CreateDirectory(directory);
                     unitOfWork.UserRepository.SaveImage(image);
+                case("likeuserdrink"):
+                    user = CheckLogin();
+                    userId = (int) body.SelectToken("userId");
+                    drinkId = (int) body.SelectToken("drinkId");
+                    if (user.Id != userId) {
+                        response = "false";
+                    } else {
+                        // response = 
+                    }
+                    break;
+                case("unlikeuserdrink"):
+                    user = CheckLogin();
+                    userId = (int) body.SelectToken("userId");
+                    drinkId = (int) body.SelectToken("drinkId");
+                    if (user.Id != userId) {
+                        response = "false";
+                    } else {
+                        // response = 
+                    }
+                    break;
+                case("getlike"):
+                    user = CheckLogin();
+                    userId = (int) body.SelectToken("userId");
+                    drinkId = (int) body.SelectToken("drinkId");
+                    
                     break;
                 default:
                     throw new NotFoundException("File Path Not Found: Post: Second link");

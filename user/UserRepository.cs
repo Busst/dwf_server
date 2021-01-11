@@ -135,12 +135,12 @@ namespace server.user
 
         public User GetByUsername(string username) {
             User user = context.Users
-                .Where(u => u.Username.Trim() == username)
+                .Where(u => u.Username == username)
                 .Select(u => new User(){
-                    Username = u.Username.Trim(),
-                    Email = u.Email.Trim(),
+                    Username = u.Username,
+                    Email = u.Email,
                     Id = u.Id,
-                    DisplayName = u.DisplayName.Trim()})
+                    DisplayName = u.DisplayName})
                 .FirstOrDefault();
             if (user == null) throw new NotFoundException("User not found");
             return user;
@@ -179,6 +179,13 @@ namespace server.user
             return file.Length;
         }
 
+        public bool LikeDrink(){
+
+            return false;
+        }
+        public bool UnlikeDrink(){
+            return false;
+        }
         
     }
 }

@@ -14,6 +14,7 @@ namespace server.repository
         private RecipeRepository recipeRepository;
         private IngredientRepository ingredientRepository;
         private FrontPageRepository frontPageRepository;
+        private UserLikesRepository userLikesRepository;
         private ILogger log;
         public UnitOfWork(ILogger logger, dwfContext context){
             this.context = context;
@@ -70,6 +71,20 @@ namespace server.repository
                     
                 }
                 return frontPageRepository;
+            }
+        }
+
+        public UserLikesRepository UserLikesRepository
+        {
+            get
+            {
+
+                if (this.userLikesRepository == null)
+                {
+                    this.userLikesRepository = new UserLikesRepository(context, log);
+                    
+                }
+                return userLikesRepository;
             }
         }
         

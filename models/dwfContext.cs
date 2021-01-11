@@ -22,6 +22,7 @@ namespace server.models
         public virtual DbSet<Recipe> Recipes { get; set; }
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<FrontPage> FrontPage { get; set; }
+        public virtual DbSet<UserLikesRecipes> UserLikesRecipes { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -121,6 +122,15 @@ namespace server.models
                         v => v.ToString(),
                         v => (FrontPageType)Enum.Parse(typeof(FrontPageType), v));
                     });
+
+            modelBuilder.Entity<UserLikesRecipes>(entity => {
+                
+                entity.Property(e => e.Id);
+
+                entity.Property(e => e.UserId);
+
+                entity.Property(e => e.RecipeId);
+            });
 
             OnModelCreatingPartial(modelBuilder);
         }
