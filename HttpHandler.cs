@@ -8,12 +8,12 @@ namespace server
 {
     public class HttpHandler : IRequestHandler
     {
-        public JObject body {get; set;}
+        protected HttpListenerRequest request { get; set; }
         protected string response {get; set;}
-        public virtual string HandleRequest(HttpListenerRequest req, JObject body){
+        public virtual string HandleRequest(HttpListenerRequest req){
+            request = req;
             string nextPath = Parsing.ParseSegment(req.Url.Segments, out string[] segments);
             nextPath = Parsing.ParseSegment(segments, out segments);
-            this.body = body;
             switch(req.HttpMethod) {
                 case "GET":
                     HandleGet(segments, req.QueryString, req.Url.Fragment, nextPath);

@@ -2,8 +2,13 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net;
+using System.Drawing;
 using System;
 using server.models;
+using System.IO;
+using HttpMultipartParser;
+using System.Drawing.Imaging;
+using server.Resources.Enums;
 
 namespace server.Resources
 {
@@ -54,6 +59,14 @@ namespace server.Resources
             return JObject.Parse((string) o);
         }
 
+        public static User ParseToUser(HttpListenerRequest request){
+            using (var stream = request.InputStream)
+            using (var reader = new StreamReader(stream)) {
+                string body = reader.ReadToEnd();
+                return JsonConvert.DeserializeObject<User>(body);
+            }
+        }
+
         public static string ParseSegment(string[] splitPath, out string[] segments){
             string nextPath = "";
             if (splitPath.Length > 1){
@@ -82,6 +95,30 @@ namespace server.Resources
             body.Close();
             return json;
         }
+        /****************************************************************************/
+        public static Picture ParseImageFromFormData(HttpListenerRequest request){
+            if (!request.HasEntityBody)
+            {
+                return null;
+            }
+            Stream input = request.InputStream;
+            var parser = MultipartFormDataParser.Parse(request.InputStream);
+            foreach (var file in parser.Files) {
+                string ext = file.ContentType == "image/jpeg" ? ".Jpeg" : file.ContentType == "image/png" ? ".png" : "";
+                
+                if (string.IsNullOrEmpty(ext)){
+                    throw new Exception("invalid file type");
+                }
+                Picture imageDTO = new Picture();
+
+                imageDTO.Image = Image.FromStream(file.Data);
+                imageDTO.exstension = ImageEnum.ToEnum(ext);
+                return imageDTO;
+            }
+            return null;
+            
+        }
+
         public static Ingredient TrimIngredient(Ingredient i){
             i.Measurement = i.Measurement.Trim();
             i.Quantity = i.Quantity.Trim();
@@ -102,5 +139,6 @@ namespace server.Resources
             }
             return listIngreds.ToArray();
         }        
+
     }
 }

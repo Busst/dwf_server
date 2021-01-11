@@ -5,6 +5,11 @@ using System;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using server.exceptions;
+using server.Resources.Enums;
+using System.Drawing;
+using System.IO;
+using System.Collections;
+using System.Drawing.Imaging;
 
 namespace server.user
 {
@@ -40,13 +45,24 @@ namespace server.user
             return user.Username;
         }
 
+        public void UpdateUser(User updatedUser, int userId) {
+            var user = context.Users.Single(u => u.Id == userId);
+            
+            log.Information($"user id: {user.Id}");
+            if (updatedUser.DisplayName != null) {
+                log.Information($"Display Name changing from {user.DisplayName ?? "NULL"} to {updatedUser.DisplayName}");
+                user.DisplayName = updatedUser.DisplayName;
+            }
+            context.SaveChanges();
+        }
+
         public override User GetByID(object id) {
             
             return context.Users.Where(u => u.Id == (int)id).Select(u => new User(){
-                Username = u.Username.Trim(),
-                Email = u.Email.Trim(),
+                Username = u.Username,
+                Email = u.Email,
                 Id = u.Id,
-                DisplayName = u.DisplayName.Trim()
+                DisplayName = u.DisplayName
             }).SingleOrDefault();
         }
         public User SaveUser(JObject userInfo) {
@@ -109,7 +125,7 @@ namespace server.user
             if (user == null) {
                 throw new NotFoundException("User not found");
             }
-            log.Debug($"{user.DisplayName}");
+            log.Debug($"{user.Password} == {token}");
             if (!(user.Password == token)) {
                 throw new NotAuthorizedException("Invalid login");
             }
@@ -138,5 +154,31 @@ namespace server.user
             user.LastLogin = DateTime.Now;
             context.SaveChanges();
         }
+
+        public bool SaveImage(Picture imageDTO) {
+            try {
+                
+                imageDTO.Image.Save(imageDTO.FilePath, ImageFormat.Jpeg);
+            } catch (Exception e) {
+                log.Error(e.Message);
+                log.Error(e.StackTrace);
+                return false;
+            }
+            
+            return true;
+        }
+
+        public Image GetImage(string filePath, string fileName) {
+            Image image = Image.FromFile($"{filePath}/{fileName}.jpeg");
+            
+            return image;
+        }
+
+        public long GetFileSize(string filePath) {
+            FileInfo file = new FileInfo(filePath);
+            return file.Length;
+        }
+
+        
     }
 }

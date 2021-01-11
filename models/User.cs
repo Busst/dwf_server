@@ -19,7 +19,8 @@ namespace server.models
         public string Email { get; set; }
         public string DisplayName { get; set; }
         public DateTime? LastLogin { get; set; }
-
+        public string ProfilePicture {get; set;}
+        public string BackgroundPicture {get; set;}
         public virtual ICollection<Recipe> Recipes { get; set; }
     }
 }

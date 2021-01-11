@@ -16,6 +16,7 @@ namespace server.recipes
     public class RecipesController : HttpHandler, IRequestHandler
     {
         // private st/ring reponse;
+        private JObject body {get; set;}
         private ILogger log;
         private UnitOfWork unitOfWork;
         private HttpListenerResponse httpListenerResponse;
@@ -25,6 +26,7 @@ namespace server.recipes
             this.log.Information("Creating a new user repo");
             unitOfWork = new UnitOfWork(this.log,  new dwfContext(serverConfig));
             this.httpListenerResponse = response;
+            body = Parsing.ParseRequestData(request);
         }
         public RecipesController(ILogger log, DbContext dbContext, HttpListenerResponse response) {
             this.log = log;

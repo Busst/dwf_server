@@ -6,7 +6,7 @@ namespace server
 {
     public interface IRequestHandler
     {
-        string HandleRequest(HttpListenerRequest req, JObject body);
+        string HandleRequest(HttpListenerRequest req);
         void HandleGet(string[] segments, NameValueCollection queries, string hash, string nextPath);
         void HandlePost(string[] segments, NameValueCollection queries, string hash, string nextPath);
         void HandlePatch(string[] segments, NameValueCollection queries, string hash, string nextPath);

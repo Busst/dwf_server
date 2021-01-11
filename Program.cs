@@ -82,9 +82,8 @@ namespace server
                 foreach (Cookie cookie in request.Cookies){
                     Log.Debug($"Cookie: {cookie.Name}: {HttpUtility.UrlDecode(cookie.Value)}");
                 }
-                JObject body = Parsing.ParseRequestData(request);
+                Log.Information($"Request Type: {request.ContentType}");
                 Log.Debug($"url: {request.Url}");
-                Log.Debug($"data: {body}");
                 string res = null;
                 int status = 200;
                 // Obtain a response object.
@@ -99,7 +98,7 @@ namespace server
                 response.AppendHeader("Access-Control-Allow-Origin", "http://localhost:3000");
 
                 try {
-                    res = HandleRequest(request, dbContext, body, response);
+                    res = HandleRequest(request, dbContext, response);
                 } catch (NotAuthorizedException e) {
                     res = e.Message;
                     status = 401;
@@ -120,19 +119,27 @@ namespace server
                 }
                 // Construct a response.
                 response.StatusCode = status;
-                string responseString = $"{res}";
-                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
+                if (response.ContentType == null || response.ContentType.Length <= 0) {
+                    response.ContentType = "application/json";
+                    string responseString = $"{res}";
+                    byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
+                    // Get a response stream and write the response to it.
+                    response.ContentLength64 = buffer.Length;
+                    System.IO.Stream output = response.OutputStream;
+                    output.Write(buffer, 0, buffer.Length);
+                    // You must close the output stream.
+                    output.Close();
+                }
+                
                 // Get a response stream and write the response to it.
-                response.ContentLength64 = buffer.Length;
-                System.IO.Stream output = response.OutputStream;
-                output.Write(buffer, 0, buffer.Length);
+
                 // You must close the output stream.
-                output.Close();
+
             } while (!runOnce);
             // listener.Stop();
         }
 
-        public static string HandleRequest(HttpListenerRequest req, DbContext dbContext, JObject body, HttpListenerResponse response){
+        public static string HandleRequest(HttpListenerRequest req, DbContext dbContext, HttpListenerResponse response){
             string[] tempPath = req.RawUrl.Split("/");
             string s = null;
             if (tempPath.Length > 1) s = tempPath[1];
@@ -151,7 +158,7 @@ namespace server
             if (controller == null) {
                 throw new NotFoundException($"404: File Path Not Found - First link\r\n{s} does not match\r\nusers\r\nrecipes");
             }
-            string res = controller.HandleRequest(req, body);
+            string res = controller.HandleRequest(req);
             return $"{res}";
         }
     }

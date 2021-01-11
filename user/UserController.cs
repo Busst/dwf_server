@@ -11,6 +11,10 @@ using server.models;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using server.Resources.Enums;
+using System.IO;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace server.user
 {
@@ -37,6 +41,7 @@ namespace server.user
         }
         public override void HandleGet(string[] segments, NameValueCollection queries, string hash, string nextPath) {
             
+            log.Information("Next Path - GET - " + nextPath);
             //Directories should follow convention {directory}/
             switch (nextPath.ToLower()) {
                 case("getsalt"):
@@ -83,20 +88,26 @@ namespace server.user
                     break;
                 case("getuserprofilepic"):
                     int id = (int) Int64.Parse(queries["id"]);
-                    
+                    Picture imageDTO = new Picture();
+                    imageDTO.FileName = "username";
+                    imageDTO.Image = unitOfWork.UserRepository.GetImage($"./images/{id}/profile/", "username");
+                    httpListenerResponse.ContentType = "image/jpeg";
+                    imageDTO.Image.Save(httpListenerResponse.OutputStream, ImageFormat.Jpeg);
+                    httpListenerResponse.OutputStream.Close();
                     break;
                 default:
                     throw new NotFoundException("File Path Not Found: Get: Second link");
             }
         }
         public override void HandlePost(string[] segments, NameValueCollection queries, string hash, string nextPath){
-            log.Information("Next Path " + nextPath);
+            log.Information("Next Path - POST - " + nextPath);
             //Directories should follow convention {directory} but WHY/
             User user = null;
             string accessToken = null;
+            Picture image = null;
             switch (nextPath.ToLower()) {
                 case("saveuser"):
-                    user = unitOfWork.UserRepository.SaveUser(body);
+                    user = unitOfWork.UserRepository.SaveUser(Parsing.ParseRequestData(request));
                     if (user == null) throw new NotAuthorizedException("unable to save user");
                     accessToken = GetAccessToken(user.Password);
                     JObject package = new JObject(
@@ -107,7 +118,7 @@ namespace server.user
                     response = package.ToString();
                     break;
                 case("login"):
-                    user = unitOfWork.UserRepository.Login(body);
+                    user = unitOfWork.UserRepository.Login(Parsing.ParseRequestData(request));
                     if (user != null){
                         accessToken = GetAccessToken(user.Password);
                         unitOfWork.UserRepository.SaveAccessToken(user.Id, accessToken);
@@ -126,12 +137,42 @@ namespace server.user
                         response = Parsing.ParseObject(user);
                     }
                     break;
+                case("updateprofilepicture"):
+                    user = CheckLogin();
+                    if (user == null) throw new NotAuthorizedException("Can't save profile picture");
+                    image = Parsing.ParseImageFromFormData(request);
+                    string directoryPath = $"./images/{user.Id}/profile";
+                    image.FilePath = directoryPath + $"/username.jpeg";
+                    
+                    Directory.CreateDirectory(directoryPath);
+                    unitOfWork.UserRepository.SaveImage(image);
+                    break;
+                case("updatebackdrop"):
+                    user = CheckLogin();
+                    if (user == null) throw new NotAuthorizedException("Can't save backdrop");
+                    image = Parsing.ParseImageFromFormData(request);
+                    string directory = $"./images/{user.Id}/profile";
+                    image.FilePath = directory + $"/backdrop.jpeg";
+                    Directory.CreateDirectory(directory);
+                    unitOfWork.UserRepository.SaveImage(image);
+                    break;
                 default:
                     throw new NotFoundException("File Path Not Found: Post: Second link");
             }
         }
         public override void HandlePatch(string[] segments, NameValueCollection queries, string hash, string nextPath){
+            log.Information("Next Path - PATCH - " + nextPath);
+            //Directories should follow convention {directory} but WHY/
+            User user = null;
+            switch (nextPath.ToLower()) {
+                case("updateuser"):
+                    user = CheckLogin();
+                    unitOfWork.UserRepository.UpdateUser(Parsing.ParseToUser(request), user.Id);
+                    break;
+                default:
+                    throw new NotFoundException("File Path Not Found: Patch: Second link");
 
+            }
         }
         public override void HandleDelete(string[] segments, NameValueCollection queries, string hash, string nextPath){
             
@@ -197,7 +238,11 @@ namespace server.user
                         id = Int32.Parse(HttpUtility.HtmlDecode(cookie.Value));
                     }
                 }
-                return unitOfWork.UserRepository.CheckLogin(token, id);
+                User user = unitOfWork.UserRepository.CheckLogin(token, id);
+                if (user == null) {
+                    throw new NotAuthorizedException("User is not authorized or logged in");
+                }
+                return user;
             }
             catch (Exception e){
                 log.Debug($"{e.Message}");

@@ -102,6 +102,10 @@ namespace server.models
                 entity.HasMany(u => u.Recipes)
                     .WithOne(r => r.User)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(e => e.ProfilePicture);
+                
+                entity.Property(e => e.BackgroundPicture);
             });
 
             modelBuilder.Entity<FrontPage>(entity => {
